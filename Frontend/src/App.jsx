@@ -1,16 +1,75 @@
 import React, { useEffect } from "react";
-import { motion, useScroll, useSpring, useReducedMotion } from "framer-motion";
+import { Routes, Route, useLocation, Navigate } from "react-router-dom";
+import {
+  motion,
+  useScroll,
+  useSpring,
+  useReducedMotion,
+  AnimatePresence,
+} from "framer-motion";
 
-// Component Imports
+// --- Components ---
 import Navbar from "./components/navbar";
+import Footer from "./components/footer";
 import Hero from "./components/hero";
 import Impact from "./components/Impact";
 import Features from "./components/features";
-import Comparison from "./sections/comparison"; // Added for credibility
+import Comparison from "./sections/comparison";
 import Workflow from "./components/how";
-import Footer from "./components/footer";
+
+// --- Pages ---
+import Login from "./pages/LoginPage";
+import Signup from "./pages/SignUp";
+import Dashboard from "./pages/Dashboard";
+import AnalyzerPage from "./pages/AnalyzerPage";
+import ResultPage from "./pages/ResultPage";
+
+// 1. SECURITY: Protected Route Guard
+const ProtectedRoute = ({ children }) => {
+  const token = localStorage.getItem("guardian_session_token");
+  // In production, verify token expiration here
+  if (!token) return <Navigate to="/login" replace />;
+  return children;
+};
+
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0); // Behavior 'instant' is default for modern browsers
+  }, [pathname]);
+  return null;
+};
+
+const LandingPage = () => (
+  <motion.main
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+    className="relative z-10"
+  >
+    <section id="home" className="scroll-mt-20">
+      <Hero />
+    </section>
+    <section id="impact" className="scroll-mt-20">
+      <Impact />
+    </section>
+    <section id="features" className="scroll-mt-20">
+      <Features />
+    </section>
+    <section
+      id="tech-specs"
+      className="py-20 bg-slate-950/20 border-y border-emerald-500/10"
+    >
+      <Comparison />
+    </section>
+    <section id="protocol" className="bg-slate-950/40 scroll-mt-20">
+      <Workflow />
+    </section>
+  </motion.main>
+);
 
 function App() {
+  const location = useLocation();
   const shouldReduceMotion = useReducedMotion();
   const { scrollYProgress } = useScroll();
 
@@ -20,62 +79,72 @@ function App() {
     restDelta: 0.001,
   });
 
-  useEffect(() => {
-    if ("scrollRestoration" in window.history) {
-      window.history.scrollRestoration = "manual";
-    }
-    window.scrollTo({ top: 0, behavior: "instant" });
-  }, []);
+  return (
+    <>
+      <ScrollToTop />
+      <div className="relative bg-[#020617] min-h-screen selection:bg-emerald-500/30 selection:text-emerald-300 font-sans antialiased">
+        {/* Scroll Progress Bar */}
+        {!shouldReduceMotion && (
+          <motion.div
+            className="fixed top-0 left-0 right-0 h-[2px] bg-emerald-500 origin-left z-[110]"
+            style={{ scaleX, willChange: "transform" }}
+            aria-hidden="true"
+          />
+        )}
 
- return (
-    /* We add a hardcoded bg-[#020617] here as a safety net */
-    <div className="relative bg-[#020617] bg-cyber-dark min-h-screen selection:bg-emerald-500/30 selection:text-emerald-300 font-sans antialiased">
-      
-      {/* 1. Progress Bar */}
-      {!shouldReduceMotion && (
-        <motion.div
-          className="fixed top-0 left-0 right-0 h-[2px] bg-emerald-500 origin-left z-[100]"
-          style={{ scaleX }}
+        {/* 2. OPTIMIZED BACKGROUND: Layered via CSS instead of JS objects for performance */}
+        <div
+          className="fixed inset-0 z-0 pointer-events-none select-none overflow-hidden"
           aria-hidden="true"
-        />
-      )}
+        >
+          <div className="absolute inset-0 opacity-[0.05] bg-cyber-grid" />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-emerald-500/[0.03] blur-[120px]" />
+        </div>
 
-      {/* 2. Global Background Effects - Fixed the "White Lines" */}
-      <div className="fixed inset-0 z-0 pointer-events-none" aria-hidden="true">
-        {/* We use inline styles for the grid to prevent white flicker during load */}
-        <div 
-          className="absolute inset-0 opacity-[0.15]" 
-          style={{ 
-            backgroundImage: `linear-gradient(to right, #10b98122 1px, transparent 1px), linear-gradient(to bottom, #10b98122 1px, transparent 1px)`,
-            backgroundSize: '50px 50px'
-          }}
-        />
+        <Navbar />
 
-        {/* Glow Orbs */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-emerald-500/5 blur-[120px]" />
-        <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-blue-500/5 blur-[120px]" />
+        {/* 3. PAGE TRANSITION WRAPPER */}
+        <AnimatePresence mode="wait">
+          <Routes location={location} key={location.pathname}>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+
+            {/* 4. PROTECTED ROUTES: Encapsulated for security */}
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/analyzer"
+              element={
+                <ProtectedRoute>
+                  <AnalyzerPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/result/:scanId"
+              element={
+                <ProtectedRoute>
+                  <ResultPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Catch-all Redirect */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </AnimatePresence>
+
+        <Footer />
       </div>
-
-      <Navbar />
-
-      <main className="relative z-10">
-        <section id="home"><Hero /></section>
-        <section id="impact" className="relative scroll-mt-20"><Impact /></section>
-        <section id="features" className="py-20 scroll-mt-20"><Features /></section>
-
-        {/* 3. The Comparison Section - Fixed the "White Section" bug */}
-        <section id="tech-specs" className="py-20 bg-[#020617]/50 border-y border-emerald-500/5">
-          <Comparison />
-        </section>
-
-        <section id="protocol" className="bg-slate-950/50 scroll-mt-20"><Workflow /></section>
-
-        {/* CTA and Footer follow... */}
-      </main>
-      <Footer />
-    </div>
+    </>
   );
 }
 
-
-export default App
+export default App;

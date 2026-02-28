@@ -1,16 +1,25 @@
-# React + Vite
+# 🛡️ Scam-i
+**Advanced AI-Powered Fraud Detection & Security Awareness Platform**
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Scam-i is a modern web application designed to help users identify and report digital scams using real-time analysis and a community-driven database. Built with an accessibility-first approach and high-performance animations.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🚀 Quick Start
 
-## React Compiler
+### Prerequisites
+- **Node.js**: v18.0.0 or higher
+- **npm** or **pnpm**
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Installation
 
-## Expanding the ESLint configuration
+1. **Clone the repository:**
+   ```bash
+   git clone [https://github.com/your-username/scam-i.git](https://github.com/scam-immunity/scam-i.git)
+   cd scam-i
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+   npm install
+   npm install framer-motion lucide-react clsx tailwind-merge
+   npm install react-hook-form zod @hookform/resolvers
+   npm install @radix-ui/react-dialog @radix-ui/react-tooltip @radix-ui/react-accordion
+   npm run dev

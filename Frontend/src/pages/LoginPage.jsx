@@ -2,6 +2,10 @@ import React, { useState } from "react";
 import AuthLayout from "../components/AuthLayout";
 import { Mail, Lock, ArrowRight, Loader2, AlertCircle } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion"; // FIXED: Added missing import
+
+// Set to true for the Pitch; set to false for production
+const MOCK_MODE = true;
 
 const Login = () => {
   const navigate = useNavigate();
@@ -12,10 +16,18 @@ const Login = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     setIsAuthenticating(true);
-    setError(""); // Clear previous errors
+    setError("");
 
+    // --- MOCK LOGIC FOR PITCH ---
+    if (MOCK_MODE) {
+      await new Promise((resolve) => setTimeout(resolve, 1500)); // Simulating network latency
+      localStorage.setItem("guardian_session_token", "mock_poly_token_7712");
+      navigate("/dashboard");
+      return;
+    }
+
+    // --- PRODUCTION LOGIC ---
     try {
-      // PRODUCTION API CALL
       const response = await fetch(
         `${process.env.REACT_APP_API_URL}/auth/login`,
         {
@@ -28,20 +40,14 @@ const Login = () => {
       const data = await response.json();
 
       if (!response.ok) {
-        // Generic error message to prevent account enumeration
         throw new Error(
-          data.message || "AUTHENTICATION_FAILED: Invalid credentials.",
+          data.message || "AUTHENTICATION_FAILED: Access Denied.",
         );
       }
 
-      // PERSISTENCE: Save session token
       localStorage.setItem("guardian_session_token", data.token);
-
-      // OPTIONAL: Update a Global AuthContext here if applicable
-
       navigate("/dashboard");
     } catch (err) {
-      console.error("AUTH_LOG:", err.message);
       setError(err.message);
     } finally {
       setIsAuthenticating(false);
@@ -54,7 +60,6 @@ const Login = () => {
       subtitle="// Please enter your credentials"
     >
       <form className="space-y-6" onSubmit={handleLogin}>
-        {/* Error Alert Display */}
         {error && (
           <motion.div
             initial={{ opacity: 0, x: -10 }}
@@ -74,11 +79,10 @@ const Login = () => {
             <input
               required
               type="email"
-              autoComplete="email"
               className="w-full bg-slate-950/50 border border-slate-800 rounded-xl py-4 pl-12 pr-4 text-white focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 transition-all font-mono text-sm"
               placeholder="name@nexus.com"
               onChange={(e) =>
-                setCredentials({ ...credentials, email: e.target.value })
+                setCredentials((prev) => ({ ...prev, email: e.target.value }))
               }
             />
           </div>
@@ -93,11 +97,13 @@ const Login = () => {
             <input
               required
               type="password"
-              autoComplete="current-password"
               className="w-full bg-slate-950/50 border border-slate-800 rounded-xl py-4 pl-12 pr-4 text-white focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 transition-all font-mono text-sm"
               placeholder="••••••••"
               onChange={(e) =>
-                setCredentials({ ...credentials, password: e.target.value })
+                setCredentials((prev) => ({
+                  ...prev,
+                  password: e.target.value,
+                }))
               }
             />
           </div>

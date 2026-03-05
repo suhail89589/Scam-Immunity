@@ -27,7 +27,8 @@ import ResultPage from "./pages/ResultPage";
 // 1. SECURITY: Protected Route Guard
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem("guardian_session_token");
-  // In production, verify token expiration here
+  // For the pitch: if no token exists, we'll allow access to result for demo purposes
+  // OR make sure you log in first.
   if (!token) return <Navigate to="/login" replace />;
   return children;
 };
@@ -35,7 +36,7 @@ const ProtectedRoute = ({ children }) => {
 const ScrollToTop = () => {
   const { pathname } = useLocation();
   useEffect(() => {
-    window.scrollTo(0, 0); // Behavior 'instant' is default for modern browsers
+    window.scrollTo(0, 0);
   }, [pathname]);
   return null;
 };
@@ -83,7 +84,6 @@ function App() {
     <>
       <ScrollToTop />
       <div className="relative bg-[#020617] min-h-screen selection:bg-emerald-500/30 selection:text-emerald-300 font-sans antialiased">
-        {/* Scroll Progress Bar */}
         {!shouldReduceMotion && (
           <motion.div
             className="fixed top-0 left-0 right-0 h-[2px] bg-emerald-500 origin-left z-[110]"
@@ -92,7 +92,6 @@ function App() {
           />
         )}
 
-        {/* 2. OPTIMIZED BACKGROUND: Layered via CSS instead of JS objects for performance */}
         <div
           className="fixed inset-0 z-0 pointer-events-none select-none overflow-hidden"
           aria-hidden="true"
@@ -103,14 +102,12 @@ function App() {
 
         <Navbar />
 
-        {/* 3. PAGE TRANSITION WRAPPER */}
         <AnimatePresence mode="wait">
           <Routes location={location} key={location.pathname}>
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
 
-            {/* 4. PROTECTED ROUTES: Encapsulated for security */}
             <Route
               path="/dashboard"
               element={
@@ -127,6 +124,16 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
+            {/* FIXED ROUTES: Added a base /result path so navigate("/result") works */}
+            <Route
+              path="/result"
+              element={
+                <ProtectedRoute>
+                  <ResultPage />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/result/:scanId"
               element={
@@ -136,7 +143,6 @@ function App() {
               }
             />
 
-            {/* Catch-all Redirect */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </AnimatePresence>

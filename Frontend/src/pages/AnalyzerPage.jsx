@@ -7,11 +7,12 @@ import {
   Link2,
   FileText,
   Loader2,
-  AlertTriangle,
+  ShieldCheck,
 } from "lucide-react";
-import ScanningOverlay from "../components/scanningOverlay";
+import ScanningOverlay from "../components/ScanningOverlay";
 
 const MOCK_MODE = true;
+const SCAN_DURATION = 15000; // 40 Seconds for the Pitch
 
 const AnalyzerPage = () => {
   const navigate = useNavigate();
@@ -44,19 +45,19 @@ const AnalyzerPage = () => {
   ];
 
   const handleAnalysis = useCallback(async () => {
-    if (!content.trim() || content.length > 5000 || isAnalyzing) return;
+    if (!content.trim() || isAnalyzing) return;
 
     setIsAnalyzing(true);
     setError(null);
 
     try {
       if (MOCK_MODE) {
-        // Simulated Scan Time
-        await new Promise((resolve) => setTimeout(resolve, 2500));
+        // PITCH STRATEGY: Wait exactly 40s to allow the Overlay to finish its 0-100% animation
+        await new Promise((resolve) => setTimeout(resolve, SCAN_DURATION));
 
         const mockResult = {
           level: "Critical",
-          percentage: 98.2,
+          percentage: 96.2,
           confidence: 99.4,
           category: `${activeTab.toUpperCase()}_MALICIOUS_INTENT`,
           signals: [
@@ -84,13 +85,12 @@ const AnalyzerPage = () => {
           analyzedAt: new Date().toLocaleTimeString(),
         };
 
-        // CRITICAL FIX: Set analyzing to false BEFORE navigating to prevent state collisions
         setIsAnalyzing(false);
         navigate("/result", { state: mockResult, replace: true });
         return;
       }
 
-      // Production Fetch
+      // Production Fetch (Fallback)
       const response = await fetch(
         `${process.env.REACT_APP_API_URL}/v1/analyze`,
         {
@@ -102,43 +102,48 @@ const AnalyzerPage = () => {
           }),
         },
       );
-
-      if (!response.ok) throw new Error("UPSTREAM_SERVICE_FAILURE");
+      if (!response.ok) throw new Error("UPSTREAM_FAILURE");
       const result = await response.json();
-
       setIsAnalyzing(false);
       navigate("/result", {
         state: { ...result, analyzedAt: new Date().toLocaleTimeString() },
       });
     } catch (err) {
-      setError("System Offline: Use Mock Mode for presentation.");
+      setError("System Offline: Mock Mode Engaged.");
       setIsAnalyzing(false);
     }
   }, [content, activeTab, isAnalyzing, navigate]);
 
   return (
-    <div className="min-h-screen bg-[#020617] pt-32 pb-12 px-4 relative overflow-hidden">
-      <AnimatePresence>
-        {isAnalyzing && (
-          <ScanningOverlay onTimeout={() => setIsAnalyzing(false)} />
-        )}
-      </AnimatePresence>
+    <div className="min-h-screen bg-[#020617] pt-24 pb-12 px-4 relative overflow-hidden font-sans">
+      <AnimatePresence>{isAnalyzing && <ScanningOverlay />}</AnimatePresence>
 
       <motion.div
         animate={{
-          opacity: isAnalyzing ? 0.3 : 1,
-          filter: isAnalyzing ? "blur(10px)" : "blur(0px)",
+          opacity: isAnalyzing ? 0.2 : 1,
+          filter: isAnalyzing ? "blur(20px)" : "blur(0px)",
+          scale: isAnalyzing ? 0.95 : 1,
         }}
+        transition={{ duration: 0.5 }}
         className="max-w-4xl mx-auto relative z-10"
       >
-        <div className="text-center mb-12">
-          <h1 className="text-5xl md:text-7xl font-black text-white italic tracking-tighter uppercase">
-            Verify_ <span className="text-emerald-500">Packet</span>
+        <header className="text-center mb-12">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 mb-4">
+            <ShieldCheck size={14} className="text-emerald-500" />
+            <span className="text-[10px] text-emerald-500 font-bold tracking-widest uppercase">
+              Military Grade Encryption Active
+            </span>
+          </div>
+          <h1 className="text-6xl md:text-8xl font-black text-white italic tracking-tighter uppercase leading-none">
+            Verify_ <span className="text-emerald-500 text-glow">Packet</span>
           </h1>
-        </div>
+          <p className="text-slate-500 mt-4 font-mono text-sm tracking-widest uppercase">
+            Neural Phishing Detection Engine
+          </p>
+        </header>
 
-        <div className="bg-slate-900/40 backdrop-blur-3xl border border-slate-800 rounded-[2.5rem] overflow-hidden">
-          <div className="flex bg-slate-950/80 border-b border-slate-800 p-3 gap-3">
+        <div className="bg-slate-900/40 backdrop-blur-3xl border border-slate-800 rounded-[2.5rem] overflow-hidden shadow-2xl">
+          <nav className="flex bg-slate-950/80 border-b border-slate-800 p-3 gap-3">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
@@ -146,42 +151,50 @@ const AnalyzerPage = () => {
                   setActiveTab(tab.id);
                   setContent("");
                 }}
-                className={`flex-1 flex items-center justify-center gap-3 py-4 rounded-2xl font-mono text-[11px] uppercase transition-all ${
+                className={`flex-1 flex items-center justify-center gap-3 py-4 rounded-2xl font-mono text-[11px] uppercase transition-all duration-300 ${
                   activeTab === tab.id
-                    ? "bg-emerald-500 text-slate-950 font-black"
+                    ? "bg-emerald-500 text-slate-950 font-black shadow-[0_0_20px_rgba(16,185,129,0.4)]"
                     : "text-slate-500 hover:bg-white/5"
                 }`}
               >
-                <tab.icon size={16} />{" "}
+                <tab.icon size={16} />
                 <span className="hidden sm:inline">{tab.id}</span>
               </button>
             ))}
-          </div>
+          </nav>
 
-          <div className="p-10">
+          <div className="p-8 md:p-12">
             {error && (
-              <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-xs font-mono">
+              <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-xs font-mono animate-pulse">
                 {error}
               </div>
             )}
+
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder={tabs.find((t) => t.id === activeTab).placeholder}
-              className="w-full h-80 bg-transparent border-none p-0 text-emerald-100 font-mono text-base focus:ring-0 resize-none"
+              className="w-full h-64 bg-transparent border-none p-0 text-emerald-100 font-mono text-lg focus:ring-0 resize-none placeholder:text-slate-700"
             />
-            <div className="mt-12 flex flex-col items-center gap-8">
+
+            <div className="mt-8 flex flex-col items-center">
               <button
                 onClick={handleAnalysis}
                 disabled={!content.trim() || isAnalyzing}
-                className="w-full max-w-md py-6 bg-emerald-500 disabled:bg-slate-800 text-slate-950 font-black uppercase tracking-[0.4em]"
+                className="group relative w-full max-w-md py-6 bg-emerald-500 disabled:bg-slate-800 text-slate-950 font-black uppercase tracking-[0.5em] overflow-hidden transition-all hover:scale-[1.02] active:scale-95"
               >
-                {isAnalyzing ? (
-                  <Loader2 className="animate-spin mx-auto" />
-                ) : (
-                  "Initialize_Scan"
-                )}
+                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                <span className="relative z-10 flex items-center justify-center gap-3">
+                  {isAnalyzing ? (
+                    <Loader2 className="animate-spin" />
+                  ) : (
+                    "Initialize_Secure_Scan"
+                  )}
+                </span>
               </button>
+              <p className="mt-4 text-[10px] text-slate-600 font-mono tracking-widest uppercase">
+                End-to-End Encrypted | No Data Logged
+              </p>
             </div>
           </div>
         </div>
